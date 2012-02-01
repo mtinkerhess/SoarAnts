@@ -1,0 +1,84 @@
+gp {ants*propose*move
+(state <s> ^name ants ^ant <a> ^turn <t>)
+(<a> ^player-id 0 -^moved-to)
+-->
+(<s> ^operator <o> + =)
+(<o> ^name move ^ant <a> ^direction [up down left right stay] )}
+
+sp {ants*elaborate*move-destination*up
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^direction up ^ant <ant>) (<ant> ^col <col> ^row <row>)
+-->
+(<o> ^destination <d>)
+(<d> ^col <col> ^row (- <row> 1))}
+
+sp {ants*elaborate*move-destination*down
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^direction down ^ant <ant>) (<ant> ^col <col> ^row <row>)
+-->
+(<o> ^destination <d>)
+(<d> ^col <col> ^row (+ <row> 1))}
+
+sp {ants*elaborate*move-destination*right
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^direction right ^ant <ant>) (<ant> ^col <col> ^row <row>)
+-->
+(<o> ^destination <d>)
+(<d> ^col (+ <col> 1) ^row <row>)}
+
+sp {ants*elaborate*move-destination*left
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^direction left ^ant <ant>)(<ant> ^col <col> ^row <row>)
+-->
+(<o> ^destination <d>)
+(<d> ^col (- <col> 1) ^row <row>)}
+
+sp {ants*elaborate*move-destination*stay
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^direction stay ^ant <ant>)(<ant> ^col <col> ^row <row>)
+-->
+(<o> ^destination <d>)
+(<d> ^col <col> ^row <row>)}
+
+sp {ants*move*reject-collision*water
+(state <s> ^name ants ^operator <o> + ^water <w>)
+(<o> ^name move ^destination <dest>)
+(<dest> ^col <col> ^row <row>)
+(<w> ^col <col> ^row <row>)
+-->
+(<s> ^operator <o> -)}
+
+sp {ants*move*reject-collision*ant
+(state <s> ^name ants ^operator <o> + ^ant.moved-to <other>)
+(<o> ^name move ^destination <dest>)
+(<dest> ^col <col> ^row <row>)
+(<other> ^col { = <col>} ^row {= <row>})
+-->
+(<s> ^operator <o> -)}
+
+#sp {ants*elaborate*prefer*move-stay
+#(state <s> ^name ants ^operator <move> + ^operator <stay> +)
+#(<move> ^name move)
+#(<stay> ^name stay)
+#-->
+#(<s> ^operator <stay> < <move>)}
+
+sp {ants*apply*move-direction
+(state <s> ^operator <o> ^io.output-link <ol> ^ant <a>)
+(<o> ^name move ^direction {<d> << up down left right >>} ^ant <a> ^destination <dest>)
+(<a> ^col <col> ^row <row>)
+(<dest> ^row <drow> ^col <dcol>)
+-->
+(<ol> ^move <m>)
+(<a> ^moved-to <mt>)
+(<mt> ^row <drow> ^col <dcol>)
+(<m> ^col <col> ^row <row> ^direction <d>)}
+
+sp {ants*apply*move-stay
+(state <s> ^operator <o> ^ant <a>)
+(<o> ^name move ^direction stay ^ant <a>)
+(<a> ^row <row> ^col <col>)
+-->
+(<a> ^moved-to <mt>)
+(<mt> ^row <row> ^col <col>)
+}

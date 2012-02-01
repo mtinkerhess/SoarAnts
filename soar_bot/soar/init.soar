@@ -1,0 +1,11 @@
+sp {ants*propose-init
+(state <s> ^superstate nil -^name)
+-->
+(<s> ^operator <o> +)
+(<o> ^name init)}
+
+sp {ants*apply-init
+(state <s> ^operator <o>)
+(<o> ^name init)
+-->
+(<s> ^name ants)}

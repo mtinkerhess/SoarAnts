@@ -1,0 +1,13 @@
+sp {default*remove-command
+:o-support
+(state <s> ^io.output-link <ol>)
+(<ol> ^{<command> << move done >>} <c>)
+(<c> ^status << complete error >>)
+-->
+(<ol> ^<command> <c> -)}
+
+sp {default*depth-error
+(state <s> ^superstate.superstate.superstate <ssss>)
+-->
+(write |ERROR: too many superstates, halting| (crlf))
+(halt)}
