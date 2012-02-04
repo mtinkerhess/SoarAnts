@@ -13,11 +13,19 @@ using namespace std;
     outlined on the specifications page at:
         http://www.ai-contest.com
 */
-int main(int argc, char *argv[])
+int main(int argc, const char *argv[])
 {
     cout.sync_with_stdio(0); //this line makes your bot faster
+    
+    const char *agent_name;
 
-    Bot bot;
+    if (argc < 2) {
+        agent_name = "ants";
+    } else {
+        agent_name = argv[1];
+    }
+
+    Bot bot(agent_name);
     bot.playGame();
 
     return 0;

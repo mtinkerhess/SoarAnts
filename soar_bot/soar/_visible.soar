@@ -1,0 +1,18 @@
+sp {ants*elaborate*visible-unexplored
+(state <s> ^name ants ^grid <g>)
+(<g> ^<col>.<row> <square>)
+(<square> ^visible false)
+-->
+(<square> ^visible-distance 0)}
+
+sp {ants*elaborate*visible-neighbor
+(state <s> ^name ants ^grid <g>)
+(<g> ^<col>.<row> <square>)
+(<square> ^<< up down left right >> <adjacent>)
+(<adjacent> ^visible-distance <adj-vis>)
+-{
+   (<square> ^<< up down left right >> {<> <adjacent> <adj2>})
+   (<adj2> ^visible-distance {< <adj-vis> <adj2-vis>})
+}
+-->
+(<square> ^visible-distance (+ <adj-vis> 1)

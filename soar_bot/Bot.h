@@ -15,7 +15,7 @@ struct Bot
 {
     State state;
 
-    Bot();
+    Bot(const char *agent_name);
     ~Bot();
 
     Kernel *kernel;
@@ -29,6 +29,8 @@ struct Bot
     void endTurn();     //indicates to the engine that it has made its moves
 
     bool checkKernelError(Kernel *kernel);
+    bool running;
+    string agent_name;
 };
 
 #endif //BOT_H_

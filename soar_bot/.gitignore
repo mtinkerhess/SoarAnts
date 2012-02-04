@@ -2,3 +2,5 @@ soar_log.txt
 *.o
 SoarBot
 MyBot
+log.txt
+ants-rl.soar

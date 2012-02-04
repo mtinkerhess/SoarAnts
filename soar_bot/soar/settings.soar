@@ -1,2 +1,4 @@
 watch 5
+#watch --rl
+rl --set learning on
 indifferent-selection -b

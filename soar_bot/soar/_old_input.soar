@@ -1,0 +1,133 @@
+sp {ants*elaborate-input*turn
+(state <s> ^io.input-link.turn <t>)
+-->
+(<s> ^turn <t>)}
+
+sp {ants*elaborate-input*water
+(state <s> ^io.input-link.water <w>)
+(<w> ^col <col> ^row <row>)
+-->
+(<s> ^water <sw>)
+(<sw> ^col <col> ^row <row>)}
+
+sp {ants*elaborate-input*food
+(state <s> ^io.input-link.food <w>)
+(<w> ^col <col> ^row <row>)
+-->
+(<s> ^food <sw>)
+(<sw> ^col <col> ^row <row>)}
+
+sp {ants*elaborate-input*hill
+(state <s> ^io.input-link.hill <w>)
+(<w> ^col <col> ^row <row> ^player-id <pid>)
+-->
+(<s> ^hill <sw>)
+(<sw> ^col <col> ^row <row> ^player-id <pid>)}
+
+sp {ants*elaborate-input*ant
+(state <s> ^io.input-link.ant <w>)
+(<w> ^col <col> ^row <row> ^player-id <pid>)
+-->
+(<s> ^ant <sw>)
+(<sw> ^col <col> ^row <row> ^player-id <pid>)}
+
+sp {ants*elaborate-input*grid-root
+(state <s> ^io.input-link.grid <g>)
+-->
+(<s> ^grid <g2>)}
+
+sp {ants*elaborate-input*grid-col
+(state <s> ^io.input-link.grid.<col> <c> ^grid <g>)
+-->
+(<g> ^<col> <c2>)}
+
+sp {ants*elaborate-input*grid-row
+(state <s> ^io.input-link.grid.<col>.<row> <square> ^grid.<col> <c>)
+-->
+(<c> ^<row> <square2>)}
+
+sp {ants*elaborate-input*grid-square*visible
+(state <s> ^io.input-link.grid.<col>.<row>.visible <v> ^grid.<col>.<row> <square>)
+-->
+(<square> ^visible <v>)}
+
+sp {ants*elaborate-input*grid-square*water
+(state <s> ^io.input-link.grid.<col>.<row>.water <v> ^grid.<col>.<row> <square>)
+-->
+(<square> ^water <v>)}
+
+sp {ants*elaborate-input*grid-square*hill
+(state <s> ^io.input-link.grid.<col>.<row>.hill <v> ^grid.<col>.<row> <square>)
+-->
+(<square> ^hill <v>)}
+
+sp {ants*elaborate-input*grid-square*food
+(state <s> ^io.input-link.grid.<col>.<row>.food <v> ^grid.<col>.<row> <square>)
+-->
+(<square> ^food <v>)}
+
+sp {ants*elaborate-input*grid-square*ant-id
+(state <s> ^io.input-link.grid.<col>.<row>.ant-id <v> ^grid.<col>.<row> <square>)
+-->
+(<square> ^ant-id <v>)}
+
+sp {ants*elaborate-input*grid-square*hill-id
+(state <s> ^io.input-link.grid.<col>.<row>.hill-id <v> ^grid.<col>.<row> <square>)
+-->
+(<square> ^hill-id <v>)}
+
+sp {ants*elaborate-input*grid-square*neighbor-values
+(state <s> ^grid.<col>.<row> <square>)
+-->
+(<square> ^col-plus-one (+ <col> 1))
+(<square> ^col-minus-one (- <col> 1))
+(<square> ^row-plus-one (+ <row> 1))
+(<square> ^row-minus-one (- <row> 1))}
+
+sp {ants*elaborate-input*grid-square*neighbor-vertical
+(state <s> ^grid.col <col>)
+(<col> ^<row> <square>)
+(<square> ^row-minus-one <row-minus-one>)
+(<col> ^<row-minus-one> <neighbor>)
+-->
+(<square> ^up <neighbor>)
+(<neighbor> ^down <square>)}
+
+sp {ants*elaborate-input*grid-square*neighbor-horizontal
+(state <s> ^grid <g>)
+(<g> ^<col>.<row> <square>)
+(<square> ^col-minus-one <col-minus-one>)
+(<g> ^<col-minus-one>.<row> <neighbor>)
+-->
+(<square> ^left <neighbor>)
+(<neighbor> ^right <square>)}
+
+sp {ants*elaborate-input*grid-square*max-col
+(state <s> ^grid <g>)
+(<g> ^cols <cols>)
+-->
+(<g> ^max-col (- <cols> 1))}
+
+sp {ants*elaborate-input*grid-square*max-row
+(state <s> ^grid <g>)
+(<g> ^rows <rows>)
+-->
+(<g> ^max-row (- <rows> 1))}
+
+sp {ants*elaborate-input*grid-square*neighbor-vertical*wrap
+(state <s> ^grid <g>)
+(<g> ^max-row <max-row> ^<col>.0 <square>)
+(<g> ^<col>.<max-row> <neighbor>)
+-->
+(<square> ^up <neighbor>)
+(<neighbor> ^down <square>)}
+
+sp {ants*elaborate-input*grid-square*neighbor-horizontal*wrap
+(state <s> ^grid <g>)
+(<g> ^max-col <max-col> ^0.<row> <square>)
+(<g> ^<max-col>.<row> <neighbor>)
+-->
+(<square> ^left <neighbor>)
+(<neighbor> ^right <square>)}
+
+

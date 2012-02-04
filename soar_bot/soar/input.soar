@@ -5,28 +5,30 @@ sp {ants*elaborate-input*turn
 
 sp {ants*elaborate-input*water
 (state <s> ^io.input-link.water <w>)
-(<w> ^col <col> ^row <row>)
 -->
-(<s> ^water <sw>)
-(<sw> ^col <col> ^row <row>)}
+(<s> ^water <w>)}
 
 sp {ants*elaborate-input*food
-(state <s> ^io.input-link.food <w>)
-(<w> ^col <col> ^row <row>)
+(state <s> ^io.input-link.food <w> ^square <sq>)
 -->
-(<s> ^food <sw>)
-(<sw> ^col <col> ^row <row>)}
+(<s> ^food <w>)}
 
 sp {ants*elaborate-input*hill
 (state <s> ^io.input-link.hill <w>)
-(<w> ^col <col> ^row <row> ^player-id <pid>)
 -->
-(<s> ^hill <sw>)
-(<sw> ^col <col> ^row <row> ^player-id <pid>)}
+(<s> ^hill <w>)}
 
 sp {ants*elaborate-input*ant
 (state <s> ^io.input-link.ant <w>)
-(<w> ^col <col> ^row <row> ^player-id <pid>)
 -->
-(<s> ^ant <sw>)
-(<sw> ^col <col> ^row <row> ^player-id <pid>)}
+(<s> ^ant <w>)}
+
+sp {ants*elaborate-input*grid
+(state <s> ^io.input-link.grid <g>)
+-->
+(<s> ^grid <g>)}
+
+sp {ants*elaborate-input*rl
+(state <s> ^io.input-link.reward <reward> ^reward-link <rl>)
+-->
+(<rl> ^reward.value <reward>)}

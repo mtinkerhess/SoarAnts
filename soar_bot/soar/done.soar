@@ -9,7 +9,7 @@ sp {ants*compare*done-move
 (<od> ^name done)
 (<om> ^name move)
 -->
-(<s> ^operator <od> -)}
+(<s> ^operator <od> < <om>)}
 
 sp {ants*apply*done
 (state <s> ^name ants ^operator <o> ^io.output-link <ol>)
