@@ -1,4 +1,5 @@
 watch 5
 #watch --rl
 rl --set learning on
-indifferent-selection -b
+indifferent-selection -e
+gp-max 1000000000

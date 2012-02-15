@@ -101,82 +101,99 @@ sp {ants*apply*move-stay
 -->
 (<a> ^moved-to <dest>)}
 
-sp {ants*elaborate*direction-structs
-(state <s> ^name ants)
--->
-(<s> ^direction-structs <rd>)
-(<rd> ^up <up> ^down <down> ^left <left> ^right <right>)
-(<up> ^cw <right>)
-(<right> ^cw <down>)
-(<down> ^cw <left>)
-(<left> ^cw <up>)
-(<up> ^ccw <left>)
-(<left> ^ccw <down>)
-(<down> ^ccw <right>)
-(<right> ^ccw <up>)
-(<up> ^opposite <down>)
-(<down> ^opposite <up>)
-(<left> ^opposite <right>)
-(<right> ^opposite <left>)
-(<right> ^name right)
-(<left> ^name left)
-(<up> ^name up)
-(<down> ^name down)}
+#sp {ants*rl*move*base-level
+#(state <s> ^operator <o> +)
+#(<o> ^ant <a> ^name move)
+#-->
+#(<s> ^operator <o> = 0.0)}
 
-sp {ants*elaborate*move*direction
-(state <s> ^name ants ^operator <o> + ^direction-structs <rd>)
-(<o> ^name move ^direction { << left right up down >> <dir-name> })
-(<rd> ^<dir-name> <dir-struct>)
-(<dir-struct> ^name <dir-name>)
--->
-(<o> ^direction-struct <dir-struct>)}
-
-sp {ants*rl*move*toward-food
-(state <s> ^name ants ^operator <o> +)
-(<o> ^name move ^ant <ant> ^destination.distance-to-food <dist>)
--{
-(<s> ^operator { <> <o> <o2> } +)
-(<o2> ^name move ^ant <ant> ^destination.distance-to-food < <dist>)
-}
+# We'll just do 8 values for now, then aother rule for more than that
+gp {ants*rl*move*distance-to-not-visible
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-not-visible [0 1 2 3 4 5 6 7])
 -->
 (<s> ^operator <o> = 0.0)}
 
-sp {ants*rl*move*not-toward-food
-(state <s> ^name ants ^operator <o> +)
-(<o> ^name move ^ant <ant> ^destination.distance-to-food <dist> )
-(<s> ^operator { <> <o> <o2> } +)
-(<o2> ^name move ^ant <ant> ^destination.distance-to-food < <dist>)
+sp {ants*rl*move*distance-to-not-visible*extra
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-not-visible {> 7})
 -->
 (<s> ^operator <o> = 0.0)}
 
-#sp {ants*rl*move*collect-food
-#(state <s> ^name ants ^operator <o> +)
-#(<o> ^name move ^ant <a> ^destination.distance-to-food < 2)
-#-->
-#(<s> ^operator <o> = 0.0)}
+# We'll just do 8 values for now, then aother rule for more than that
+gp {ants*rl*move*distance-to-water
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-water [0 1 2 3 4 5 6 7])
+-->
+(<s> ^operator <o> = 0.0)}
 
-#sp {ants*rl*move*not-collect-food
-#(state <s> ^name ants ^operator <o> +)
-#(<o> ^name move ^ant <a> -^destination.distance-to-food < 2)
-#-->
-#(<s> ^operator <o> = 0.0)}
+sp {ants*rl*move*distance-to-water*extra
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-water {> 7})
+-->
+(<s> ^operator <o> = 0.0)}
 
-#sp {ants*rl*move*toward-not-visible
-#(state <s> ^name ants ^operator <o> +)
-#(<o> ^name move ^ant <ant> ^destination.distance-to-not-visible <dist>)
-#-{
-#(<s> ^operator { <> <o> <o2> } +)
-#(<o2> ^name move ^ant <ant> ^destination.distance-to-not-visible < <dist>)
-#}
-#-->
-#(<s> ^operator <o> = 0.0)}
+# We'll just do 8 values for now, then aother rule for more than that
+gp {ants*rl*move*distance-to-my-hill
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-my-hill [0 1 2 3 4 5 6 7])
+-->
+(<s> ^operator <o> = 0.0)}
 
-#sp {ants*rl*move*not-toward-not-visible
-#(state <s> ^name ants ^operator <o> +)
-#(<o> ^name move ^ant <ant> ^destination.distance-to-not-visible <dist>)
-#(<s> ^operator { <> <o> <o2> } +)
-#(<o2> ^name move ^ant <ant> ^destination.distance-to-not-visible < <dist>)
-#-->
-#(<s> ^operator <o> = 0.0)}
+sp {ants*rl*move*distance-to-my-hill*extra
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-my-hill {> 7})
+-->
+(<s> ^operator <o> = 0.0)}
 
+# We'll just do 8 values for now, then aother rule for more than that
+gp {ants*rl*move*distance-to-enemy-hill
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-enemy-hill [0 1 2 3 4 5 6 7])
+-->
+(<s> ^operator <o> = 0.0)}
 
+sp {ants*rl*move*distance-to-enemy-hill*extra
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-enemy-hill {> 7})
+-->
+(<s> ^operator <o> = 0.0)}
+
+# We'll just do 8 values for now, then aother rule for more than that
+gp {ants*rl*move*distance-to-food
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-food [0 1 2 3 4 5 6 7])
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-food*extra
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-food {> 7})
+-->
+(<s> ^operator <o> = 0.0)}
+
+# We'll just do 8 values for now, then aother rule for more than that
+gp {ants*rl*move*distance-to-my-ant
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-my-ant [0 1 2 3 4 5 6 7])
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-my-ant*extra
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-my-ant {> 7})
+-->
+(<s> ^operator <o> = 0.0)}
+
+# We'll just do 8 values for now, then aother rule for more than that
+gp {ants*rl*move*distance-to-enemy-ant
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-enemy-ant [0 1 2 3 4 5 6 7])
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-enemy-ant*extra
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-enemy-ant {> 7})
+-->
+(<s> ^operator <o> = 0.0)}

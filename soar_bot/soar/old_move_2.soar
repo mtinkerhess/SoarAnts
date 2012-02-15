@@ -1,0 +1,313 @@
+gp {ants*propose*move
+(state <s> ^name ants ^ant <a> ^turn <t>)
+(<a> ^player-id 0 -^moved-to)
+-->
+(<s> ^operator <o> + =)
+(<o> ^name move ^ant <a> ^direction [up down left right stay] )}
+
+sp {ants*elaborate*move-destination*up
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^direction up ^ant <ant>)
+(<ant> ^square.up <neighbor-square>)
+-->
+(<o> ^destination <neighbor-square>)}
+
+sp {ants*elaborate*move-destination*down
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^direction down ^ant <ant>)
+(<ant> ^square.down <neighbor-square>)
+-->
+(<o> ^destination <neighbor-square>)}
+
+sp {ants*elaborate*move-destination*right
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^direction right ^ant <ant>) 
+(<ant> ^square.right <neighbor-square>)
+-->
+(<o> ^destination <neighbor-square>)}
+
+sp {ants*elaborate*move-destination*left
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^direction left ^ant <ant>)
+(<ant> ^square.left <neighbor-square>)
+-->
+(<o> ^destination <neighbor-square>)}
+
+sp {ants*elaborate*move-destination*stay
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^direction stay ^ant <ant>)
+(<ant> ^square <square>)
+-->
+(<o> ^destination <square>)}
+
+sp {ants*move*reject-collision*water
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^destination.water true)
+-->
+(<s> ^operator <o> -)}
+
+sp {ants*move*reject-collision*ant
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^destination <dest> ^ant <ant>)
+(<dest> ^<< up down left right >>.ant {<> <ant> <other-ant>})
+(<other-ant> ^moved-to <dest>)
+-->
+(<s> ^operator <o> -)}
+
+sp {ants*move*reject-collision*ant-stay
+(state <s> ^name ants ^operator <o> +)
+(<other-ant> ^moved-to <dest>)
+(<dest> ^ant <other-ant>)
+(<o> ^name move ^destination <dest> ^ant {<> <other-ant> <ant>})
+-->
+(<s> ^operator <o> -)}
+
+sp {ants*move*reject-collision*ant-unmoved
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^destination <dest> ^ant <ant>)
+(<dest> ^ant {<> <ant> <other-ant>})
+(<other-ant> -^moved-to <other-dest>)
+-->
+(<s> ^operator <o> -)}
+
+#sp {ants*elaborate*prefer*move-stay
+#(state <s> ^name ants ^operator <move> + ^operator <stay> +)
+#(<move> ^name move ^direction {<> stay})
+#(<stay> ^name move ^direction stay)
+#-->
+#(<s> ^operator <stay> < <move>)}
+
+#sp {ants*move*elaborate*prefer-food
+#(state <s> ^name ants ^operator <move1> + ^operator {<> <move1> <move2>} +)
+#(<move1> ^name move ^ant <a> ^direction << left right up down >>)
+#(<move2> ^name move ^ant <a> ^direction << up left right down >>)
+#(<move1> ^destination.destination.distance-to-food <dist1>)
+#(<move2> ^destination.destination.distance-to-food {> <dist1> <dist2>})
+#-->
+#(<s> ^operator <move1> > <move2>)}
+
+sp {ants*apply*move-direction
+(state <s> ^operator <o> ^io.output-link <ol> ^ant <a>)
+(<o> ^name move ^direction {<d> << up down left right >>} ^ant <a> ^destination <dest>)
+(<a> ^col <col> ^row <row>)
+-->
+(<ol> ^move <m>)
+(<a> ^moved-to <dest>)
+(<m> ^col <col> ^row <row> ^direction <d>)}
+
+sp {ants*apply*move-stay
+(state <s> ^operator <o> ^ant <a>)
+(<o> ^name move ^direction stay ^ant <a> ^destination <dest>)
+-->
+(<a> ^moved-to <dest>)}
+
+sp {ants*tl*move*base
+(state <s> ^operator <o> +)
+(<o> ^name move)
+-->
+(<s> ^operator <o> = 0.0)}
+
+# Relative values
+# distance-to-not-visible
+sp {ants*rl*move*distance-to-not-visible*closest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-not-visible <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-not-visible { < <dist> <dist-2> })
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-not-visible*farthest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-not-visible <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-not-visible > <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-not-visible*middle
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-not-visible <dist>)
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-not-visible <> <dist>)
+-->
+(<s> ^operator <o> = 0.0)}
+
+# distance-to-water
+sp {ants*rl*move*distance-to-water*closest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-water <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-water < <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-water*farthest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-water <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-water > <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-water*middle
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-water <dist>)
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-water <> <dist>)
+-->
+(<s> ^operator <o> = 0.0)}
+
+# distance-to-my-hill
+sp {ants*rl*move*distance-to-my-hill*closest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-my-hill <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-my-hill < <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-my-hill*farthest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-my-hill <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-my-hill > <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-my-hill*middle
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-my-hill <dist>)
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-my-hill <> <dist>)
+-->
+(<s> ^operator <o> = 0.0)}
+
+# distance-to-enemy-hill
+sp {ants*rl*move*distance-to-enemy-hill*closest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-enemy-hill <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-enemy-hill < <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-enemy-hill*farthest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-enemy-hill <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-enemy-hill > <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-enemy-hill*middle
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-enemy-hill <dist>)
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-enemy-hill <> <dist>)
+-->
+(<s> ^operator <o> = 0.0)}
+
+# distance-to-food
+sp {ants*rl*move*distance-to-food*closest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-food <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-food < <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-food*farthest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-food <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-food > <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-food*middle
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-food <dist>)
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-food <> <dist>)
+-->
+(<s> ^operator <o> = 0.0)}
+
+# distance-to-my-ant
+sp {ants*rl*move*distance-to-my-ant*closest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-my-ant <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-my-ant < <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-my-ant*farthest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-my-ant <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-my-ant > <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-my-ant*middle
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-my-ant <dist>)
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-my-ant <> <dist>)
+-->
+(<s> ^operator <o> = 0.0)}
+
+# distance-to-enemy-ant
+sp {ants*rl*move*distance-to-enemy-ant*closest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-enemy-ant <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-enemy-ant < <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-enemy-ant*farthest
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-enemy-ant <dist>)
+-{
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-enemy-ant > <dist>)
+}
+-->
+(<s> ^operator <o> = 0.0)}
+
+sp {ants*rl*move*distance-to-enemy-ant*middle
+(state <s> ^operator <o> +)
+(<o> ^ant <a> ^name move ^destination.distance-to-enemy-ant <dist>)
+(<s> ^operator { <> <o> <o2> } +)
+(<o2> ^ant <a> ^name move ^destination.distance-to-enemy-ant <> <dist>)
+-->
+(<s> ^operator <o> = 0.0)}
+

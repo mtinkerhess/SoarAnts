@@ -294,7 +294,7 @@ void Bot::playGame()
         int d_ants = state.myAnts.size() - num_ants;
         num_ants = state.myAnts.size();
 
-        double reward = -1 + d_ants * 5;
+        double reward = -1 + d_ants * 10;
 
         soar_log << "new turn: " << state.turn << endl;
         soar_log << "reward was " << reward << endl;
@@ -375,7 +375,12 @@ void Bot::playGame()
     }
     stringstream ctf_command;
     ctf_command << "ctf " << agent_name << "-rl.soar print --full --rl";
+    soar_log << "About to write back rl rules: " << ctf_command.str() << endl;
     soar_log << agent->ExecuteCommandLine(ctf_command.str().c_str()) << endl;
+    soar_log << "print --rl" << endl;
+    soar_log << agent->ExecuteCommandLine("print --rl") << endl;
+    soar_log << "fc" << endl;
+    soar_log << agent->ExecuteCommandLine("fc") << endl;
 }
 
 //makes the bots moves for the turn
