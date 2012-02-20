@@ -4,82 +4,15 @@
 #include <cstdlib>
 #include <utility>
 #include <ctime>
+#include <exception>
+#include "square_id_wme.h"
+#include "Dijkstra.h"
+#include "AntAgent.h"
 
 using namespace sml;
 using namespace std;
 
-struct SquareIdWME {
-    Identifier *root;
-    StringElement *is_visible;
-    StringElement *is_water;
-    StringElement *is_hill;
-    StringElement *is_food;
-    IntElement *ant_player_id;
-    IntElement *hill_player_id;
-
-    bool was_visible;
-    bool was_water;
-    bool was_hill;
-    bool was_food;
-    int was_ant;
-    int was_hill_player;
-
-    void Update(const Square &square) {
-        if (square.isVisible != was_visible) {
-            is_visible->Update(square.isVisible ? "true" : "false");
-            was_visible = square.isVisible;
-        }
-        if (square.isWater != was_water) {
-            is_water->Update(square.isWater ? "true" : "false");
-            was_water = square.isWater;
-        }
-        if (square.isHill != was_hill) {
-            is_hill->Update(square.isHill ? "true" : "false");
-            was_hill = square.isHill;
-        }
-        if (square.isFood != was_food) {
-            is_food->Update(square.isFood ? "true" : "false");
-            was_food = square.isFood;
-        }
-        if (square.ant != was_ant) {
-            ant_player_id->Update(square.ant);
-            was_ant = square.ant;
-        }
-        if (square.hillPlayer != was_hill_player) {
-            hill_player_id->Update(square.hillPlayer);
-            was_hill_player = square.hillPlayer;
-        }
-    }
-
-
-
-    SquareIdWME(
-            Identifier *root,
-            StringElement *is_visible,
-            StringElement *is_water,
-            StringElement *is_hill,
-            StringElement *is_food,
-            IntElement *ant_player_id,
-            IntElement *hill_player_id)
-        :
-            root(root),
-            is_visible(is_visible),
-            is_water(is_water),
-            is_hill(is_hill),
-            is_food(is_food),
-            ant_player_id(ant_player_id),
-            hill_player_id(hill_player_id),
-
-            was_visible(false),
-            was_water(false),
-            was_hill(false),
-            was_food(false),
-            was_ant(-1),
-            was_hill_player(-1)
-    { }
-};
-
-void printCallback(smlPrintEventId id, void* pUserData, Agent* pAgent, char const* pMessage) {
+void print_callback(smlPrintEventId id, void* pUserData, Agent* pAgent, char const* pMessage) {
     (((Bot*) pUserData)->soar_log) << pMessage << endl;
 }
 
@@ -95,6 +28,7 @@ bool Bot::checkKernelError(Kernel *kernel) {
 Bot::Bot(const char *agent_name)
     : running(true), agent_name(agent_name)
 {
+    srand(time(NULL));
     soar_log.open("log.txt");
     soar_log << "bot ctor" << endl;
     soar_log << "agent name " << agent_name << endl;
@@ -102,7 +36,7 @@ Bot::Bot(const char *agent_name)
     checkKernelError(kernel);
     agent = kernel->CreateAgent("ants");
     checkKernelError(kernel);
-    agent->RegisterForPrintEvent(smlEVENT_PRINT, printCallback, this);
+    agent->RegisterForPrintEvent(smlEVENT_PRINT, print_callback, this);
     stringstream command;
     command << "source " << agent_name << ".soar";
     soar_log << agent->ExecuteCommandLine(command.str().c_str()) << endl;
@@ -117,18 +51,6 @@ Bot::~Bot() {
     delete kernel;
 }
 
-Identifier *make_child(Agent *agent, Identifier *parent, const char *name, int col, int row, vector<Identifier *> &temp_children, vector<vector<SquareIdWME> > &grid_ids) {
-    Identifier *id = agent->CreateIdWME(parent, name);
-    agent->CreateIntWME(id, "col", col);
-    agent->CreateIntWME(id, "row", row);
-    Identifier *id2 = agent->CreateSharedIdWME(id, "square", grid_ids[col][row].root);
-    Identifier *id3 = agent->CreateSharedIdWME(grid_ids[col][row].root, name, id);
-    temp_children.push_back(id);
-    temp_children.push_back(id2);
-    temp_children.push_back(id3);
-    return id;
-}
-
 // Functions for finding starting points for Dijkstra's algorithm
 bool square_not_visible(const Square &square) { return !square.isVisible; }
 bool square_is_water(const Square &square) { return square.isWater; }
@@ -137,91 +59,6 @@ bool square_is_enemy_hill(const Square &square) { return square.isHill && square
 bool square_is_food(const Square &square) { return square.isFood; }
 bool square_is_my_ant(const Square &square) { return square.ant == 0; }
 bool square_is_enemy_ant(const Square &square) { return square.ant > 0; }
-
-clock_t dijk_timers[3];
-
-// Perform Dijkstra's algorithm on the state, 
-// Annotating the input link representation with
-// information about the distance to certain kinds
-// of features.
-bool dijkstras_algorithm(Agent *&agent,
-        vector<vector<SquareIdWME> > &grid_ids,
-        const State &state,
-        bool (*square_func)(const Square &square),
-        const char *attr_name,
-        vector<IntElement *> &temp_children,
-        ofstream &soar_log) {
-
-    // Create a data structure to hold the distance values in.
-    vector<vector<int> > values(state.cols, vector<int>(state.rows, -1));
-
-    // Find all squares that satisfay the initial condition.
-    // Mark their values as 0.
-    // If none are found, return false.
-    dijk_timers[0] -= clock();
-    int squares_found = 0;
-    for (int col = 0; col < state.cols; ++col) {
-        for (int row = 0; row < state.rows; ++row) {
-            if (square_func(state.grid[row][col])) {
-                ++squares_found;
-                values[col][row] = 0;
-            }
-        }
-    }
-    dijk_timers[0] += clock();
-    if (squares_found == 0) {
-        return false;
-    }
-
-    // Propogate values.
-    // For 0 up to some maximum value,
-    // for each square marked with that value,
-    // for each of its neighbors that are still marked -1 and aren't water,
-    // mark that neighbor with one more than the value.
-    // Keep track of how many neighbors are marked;
-    // if no neighbors are marked, terminate propogation early.
-    int max_value = state.cols + state.rows;
-    static const pair<int, int> left = make_pair(-1, 0);
-    static const pair<int, int> right = make_pair(1, 0);
-    static const pair<int, int> up = make_pair(0, -1);
-    static const pair<int, int> down = make_pair(0, 1);
-    static const pair<int, int> directions[] = {left, right, up, down};
-    squares_found = 1; // hack
-    dijk_timers[1] -= clock();
-    for (int value = 0; value < max_value && squares_found != 0; ++value) {
-        squares_found = 0;
-        for (int col = 0; col < state.cols; ++col) {
-            for (int row = 0; row < state.rows; ++row) {
-                if (values[col][row] == value) {
-                    for (int direction = 0; direction < 4; ++direction) {
-                        int d_col = directions[direction].first;
-                        int d_row = directions[direction].second;
-                        int other_col = (col + d_col + state.cols) % state.cols;
-                        int other_row = (row + d_row + state.rows) % state.rows;
-                        if ((!state.grid[row][col].isWater || value == 0) && values[other_col][other_row] == -1) {
-                            ++squares_found;
-                            values[other_col][other_row] = value + 1;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    dijk_timers[1] += clock();
-
-    // Mark WMEs.
-    dijk_timers[2] -= clock();
-    for (int col = 0; col < state.cols; ++col) {
-        for (int row = 0; row < state.rows; ++row) {
-            int value = values[col][row];
-            if (value < 0) continue;
-            IntElement *wme = agent->CreateIntWME(grid_ids[col][row].root, attr_name, values[col][row]);
-            temp_children.push_back(wme);
-        }
-    }
-    dijk_timers[2] += clock();
-    return true;
-}
 
 //plays a single game of Ants.
 void Bot::playGame()
@@ -264,24 +101,45 @@ void Bot::playGame()
     // Make adjacency links
     for (int col = 0; col < state.cols; ++col) {
         for (int row = 0; row < state.rows; ++row) {
-            // Left
                 agent->CreateSharedIdWME(grid_ids[col][row].root, "left", grid_ids[(col - 1 + state.cols) % state.cols][row].root);
-            // Right
                 agent->CreateSharedIdWME(grid_ids[col][row].root, "right", grid_ids[(col + 1) % state.cols][row].root);
-            // Up
                 agent->CreateSharedIdWME(grid_ids[col][row].root, "up", grid_ids[col][(row - 1 + state.rows) % state.rows].root);
-            // Down
                 agent->CreateSharedIdWME(grid_ids[col][row].root, "down", grid_ids[col][(row + 1) % state.rows].root);
         }
     }
 
     endTurn();
 
-    // For timing information
-    int num_timers = 8;
-    vector<clock_t> timers(num_timers, 0);
-
     int num_ants = 1;
+
+
+    soar_log << "About to make dijkstra structures" << endl;
+
+    // Maps locations onto the ant agent that controls the ant at that location.
+    map<Location, AntAgent *> *ant_agents = new map<Location, AntAgent *>;
+
+    int next_ant_id = 0;
+    // Perform Dijkstra's algorithm.
+    static const string dijk_attr_names[] = {
+        "distance-to-not-visible",
+        "distance-to-water",
+        "distance-to-my-hill",
+        "distance-to-enemy-hill",
+        "distance-to-food",
+        "distance-to-my-ant",
+        "distance-to-enemy-ant"
+    };
+
+    static bool (*dijk_funcs[])(const Square &) = {
+        square_not_visible,
+        square_is_water,
+        square_is_my_hill,
+        square_is_enemy_hill,
+        square_is_food,
+        square_is_my_ant,
+        square_is_enemy_ant
+    };
+    int num_dijk_values = 7;
 
     soar_log << "about to start first turn" << endl;
 
@@ -289,90 +147,68 @@ void Bot::playGame()
     while(cin >> state)
     {
         state.updateVisionInformation();
-        agent->Update(turn_id, state.turn);
-
         int d_ants = state.myAnts.size() - num_ants;
         num_ants = state.myAnts.size();
-
         double reward = -1 + d_ants * 10;
 
-        soar_log << "new turn: " << state.turn << endl;
-        soar_log << "reward was " << reward << endl;
+        vector<vector<vector<int> > > dijk_values(num_dijk_values);
+        for (int value = 0; value < num_dijk_values; ++value) {
+            dijkstras_algorithm(state, dijk_funcs[value], dijk_values[value], soar_log);
+            // Do this in each agent
+            // dijkstra_update_il(dijk_attr_names[value], dijk_values[value], agent, grid_ids, temp_int_children);
+        }
 
-        // Update input link
-        agent->Update(reward_wme, reward);
-        for (int i = 0; i < temp_children.size(); ++i) {
-            agent->DestroyWME(temp_children[i]);
+        map<Location, AntAgent *> *next_ant_agents = new map<Location, AntAgent *>; // Will later replace ant_agents
+
+        for (vector<Location>::const_iterator my_ant_location = state.myAnts.begin();
+                my_ant_location != state.myAnts.end(); ++my_ant_location) {
+            map<Location, AntAgent *>::iterator ant_agent_it = ant_agents->find(*my_ant_location);
+            int direction = -1;
+            AntAgent *ant_agent = NULL;
+            if (ant_agents->empty() || ant_agent_it == ant_agents->end()) {
+                // There is no ant that was trying to move to this location.
+                // Create a new agent for that ant.
+                stringstream ant_name;
+                ant_name << "ant-agent-" << next_ant_id;
+                ++next_ant_id;
+                ant_agent = new AntAgent(*my_ant_location, kernel, ant_name.str(), print_callback, this);
+                ant_agent->init_input_link(state, *my_ant_location);
+                ant_agent->update_input_link(state, *my_ant_location, dijk_values, dijk_attr_names, num_dijk_values);
+                direction = ant_agent->move(state, 0.0); // No reward on the first turn
+            } else {
+                // There exists an agent that was controlling this ant.
+                // Let this agent move.
+                ant_agent = ant_agent_it->second;
+                ant_agent->update_input_link(state, *my_ant_location, dijk_values, dijk_attr_names, num_dijk_values);
+                direction = ant_agent->move(state, reward);
+            }
+            state.makeMove(*my_ant_location, direction);
+            next_ant_agents->insert(make_pair(state.getLocation(*my_ant_location, direction), ant_agent));
         }
-        for (int i = 0; i < temp_int_children.size(); ++i) {
-            agent->DestroyWME(temp_int_children[i]);
-        }
-        temp_children.clear();
-        temp_int_children.clear();
-        for (int col = 0; col < state.cols; ++col) {
-            for (int row = 0; row < state.rows; ++row) {
-                Square &square = state.grid[row][col];
-                
-                // Update grid cell
-                SquareIdWME &square_wme = grid_ids[col][row];
-                square_wme.Update(square);
-                // Update item wmes
-                if (square.isWater) {
-                    make_child(agent, il, "water", col, row, temp_children, grid_ids);
-                }
-                if (!square.isVisible) {
-                    // Nothing else we can tell about this square.
-                    continue;
-                }
-                if (square.isHill) {
-                    Identifier *child = make_child(agent, il, "hill", col, row, temp_children, grid_ids);
-                    agent->CreateIntWME(child, "player-id", square.hillPlayer);
-                }
-                if (square.isFood) {
-                    make_child(agent, il, "food", col, row, temp_children, grid_ids);
-                }
-                if (square.ant >= 0) {
-                    Identifier *child = make_child(agent, il, "ant", col, row, temp_children, grid_ids);
-                    agent->CreateIntWME(child, "player-id", square.ant);
-                }
+
+
+        // Delete agents that didn't move this turn.
+        // Also mark them as dead for good measure
+        for (map<Location, AntAgent*>::iterator ant_agent = ant_agents->begin();
+                ant_agent != ant_agents->end(); ++ant_agent) {
+            if (ant_agent->second->turn != state.turn) {
+                ant_agent->second->die();
+                delete ant_agent->second; // Takes care of deleting the Soar agent via the kernel.
             }
         }
 
-        // Perform Dijkstra's algorithm.
-        timers[0] -= clock();
-        dijkstras_algorithm(agent, grid_ids, state, square_not_visible, "distance-to-not-visible", temp_int_children, soar_log);
-        timers[0] += clock();
-        timers[1] -= clock();
-        dijkstras_algorithm(agent, grid_ids, state, square_is_water, "distance-to-water", temp_int_children, soar_log);
-        timers[1] += clock();
-        timers[2] -= clock();
-        dijkstras_algorithm(agent, grid_ids, state, square_is_my_hill, "distance-to-my-hill", temp_int_children, soar_log);
-        timers[2] += clock();
-        timers[3] -= clock();
-        dijkstras_algorithm(agent, grid_ids, state, square_is_enemy_hill, "distance-to-enemy-hill", temp_int_children, soar_log);
-        timers[3] += clock();
-        timers[4] -= clock();
-        dijkstras_algorithm(agent, grid_ids, state, square_is_food, "distance-to-food", temp_int_children, soar_log);
-        timers[4] += clock();
-        timers[5] -= clock();
-        dijkstras_algorithm(agent, grid_ids, state, square_is_my_ant, "distance-to-my-ant", temp_int_children, soar_log);
-        timers[5] += clock();
-        timers[6] -= clock();
-        dijkstras_algorithm(agent, grid_ids, state, square_is_enemy_ant, "distance-to-enemy-ant", temp_int_children, soar_log);
-        timers[6] += clock();
 
-        timers[7] -= clock();
-        makeMoves();
-        timers[7] += clock();
+        // Swap the locations map.
+        // After this, ant_agents indexes ant by where they want to end up _next_ turn.
+        delete ant_agents;
+        ant_agents = next_ant_agents;
+
+
+        //makeMoves();
         endTurn();
     }
+    /*
     soar_log << agent->ExecuteCommandLine("stats") << endl;
-    for (int i = 0; i < num_timers; ++i) {
-        soar_log << "timer " << i << ": " << (timers[i] / double(CLOCKS_PER_SEC)) << endl;
-    }
-    for (int i = 0; i < 3; ++i) {
-        soar_log << "dijk timer " << i << ": " << (dijk_timers[i] / double(CLOCKS_PER_SEC)) << endl;
-    }
     stringstream ctf_command;
     ctf_command << "ctf " << agent_name << "-rl.soar print --full --rl";
     soar_log << "About to write back rl rules: " << ctf_command.str() << endl;
@@ -381,9 +217,11 @@ void Bot::playGame()
     soar_log << agent->ExecuteCommandLine("print --rl") << endl;
     soar_log << "fc" << endl;
     soar_log << agent->ExecuteCommandLine("fc") << endl;
+    */
 }
 
 //makes the bots moves for the turn
+// DEPRECATED
 void Bot::makeMoves()
 {
     state.bug << "turn " << state.turn << ":" << endl;

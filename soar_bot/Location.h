@@ -20,4 +20,7 @@ struct Location
     };
 };
 
+bool operator<(const Location &left, const Location &right);
+
+
 #endif //LOCATION_H_

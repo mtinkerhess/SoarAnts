@@ -3,7 +3,7 @@ CFLAGS=-O3 -funroll-loops -c
 INCLUDEFLAGS=-I $$SOAR_HOME/include/
 LDFLAGS=-O2 -lm
 SOARFLAGS=-L$$SOAR_HOME/lib/ -lClientSML -lElementXML -lConnectionSML
-SOURCES=Bot.cc MyBot.cc State.cc
+SOURCES=Bot.cc MyBot.cc State.cc AntAgent.cc Util.cc Dijkstra.cc square_id_wme.cc Location.cc
 OBJECTS=$(addsuffix .o, $(basename ${SOURCES}))
 EXECUTABLE=SoarBot
 
