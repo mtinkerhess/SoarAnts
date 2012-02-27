@@ -19,7 +19,6 @@ struct Bot
     ~Bot();
 
     Kernel *kernel;
-    Agent *agent;
 
     ofstream soar_log;
 

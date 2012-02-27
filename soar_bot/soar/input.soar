@@ -23,6 +23,11 @@ sp {ants*elaborate-input*ant
 -->
 (<s> ^ant <w>)}
 
+sp {ants*elaborate-input*me
+(state <s> ^io.input-link.me <w>)
+-->
+(<s> ^me <w>)}
+
 sp {ants*elaborate-input*grid
 (state <s> ^io.input-link.grid <g>)
 -->

@@ -38,8 +38,10 @@ class AntAgent {
         // The expected location of the ant.
         Location location;
 
+        string name;
+
         // Constructor
-        AntAgent(Location location, Kernel *kernel, const string &name, PrintEventHandler print_callback, Bot *bot);
+        AntAgent(Location location, Kernel *kernel, const string &name, Bot *bot);
         ~AntAgent();
 
         // Make a single move.

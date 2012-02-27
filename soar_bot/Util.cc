@@ -25,6 +25,10 @@ Identifier *make_child(Agent *agent, Identifier *parent, const char *name, int c
     return id;
 }
 
+void print_callback(smlPrintEventId id, void* pUserData, Agent* pAgent, char const* pMessage) {
+    (*static_cast<ostream*>(pUserData)) << pMessage << endl;
+}
+
 double rand_double() {
     return rand() / double(RAND_MAX);
 }

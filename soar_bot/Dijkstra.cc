@@ -77,20 +77,35 @@ void dijkstras_algorithm(
 
 }
 
+/**
+  * Adds WMEs on the input link with information about nearby Dijkstra values.
+  */
 void dijkstra_update_il(
         const State &state,
+        const Location &location,
         const char* attr_name,
         const vector<vector<int> > &values,
         Agent *agent, 
         vector<vector<SquareIdWME> > &grid_ids,
-        vector<IntElement *> &temp_children) {
+        vector<IntElement *> &temp_children,
+        ostream &log) {
     // Mark WMEs.
-    for (int col = 0; col < state.cols; ++col) {
-        for (int row = 0; row < state.rows; ++row) {
-            int value = values[col][row];
-            if (value < 0) continue;
-            IntElement *wme = agent->CreateIntWME(grid_ids[col][row].root, attr_name, values[col][row]);
-            temp_children.push_back(wme);
-        }
+    // Only mark the current location and locations that are adjacent,
+    // becuase that's all our RL agents should be taking into account.
+    // In the future maybe they'll care about more.
+    static const int d_loc[5][2] = {
+        {0, 0},
+        {-1, 0}, {1, 0},
+        {0, -1}, {0, 1},
+    };
+    static const int num_d_loc = 5;
+
+    for (int i = 0; i < num_d_loc; ++i) {
+        const int col = location.col + d_loc[i][0];
+        const int row = location.row + d_loc[i][1];
+        const int value = values[col][row];
+        if (value < 0) continue;
+        IntElement *wme = agent->CreateIntWME(grid_ids[col][row].root, attr_name, values[col][row]);
+        temp_children.push_back(wme);
     }
 }

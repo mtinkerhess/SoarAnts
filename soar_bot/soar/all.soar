@@ -3,6 +3,3 @@ source default.soar
 source init.soar
 source input.soar
 source move.soar
-source done.soar
-#source visible.soar
-#source monitor.soar

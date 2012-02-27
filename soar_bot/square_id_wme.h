@@ -13,6 +13,7 @@ struct SquareIdWME {
     StringElement *is_water;
     StringElement *is_hill;
     StringElement *is_food;
+    StringElement *is_destination;
     IntElement *ant_player_id;
     IntElement *hill_player_id;
 
@@ -20,6 +21,7 @@ struct SquareIdWME {
     bool was_water;
     bool was_hill;
     bool was_food;
+    bool was_destination;
     int was_ant;
     int was_hill_player;
 
@@ -30,6 +32,7 @@ struct SquareIdWME {
             StringElement *is_water,
             StringElement *is_hill,
             StringElement *is_food,
+            StringElement *was_destination,
             IntElement *ant_player_id,
             IntElement *hill_player_id);
 };

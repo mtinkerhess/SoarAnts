@@ -25,9 +25,11 @@ void dijkstras_algorithm(
 
 void dijkstra_update_il(
         const State &state,
+        const Location &location,
         const char* attr_name,
         const vector<vector<int> > &values,
         Agent *agent, 
         vector<vector<SquareIdWME> > &grid_ids,
-        vector<IntElement *> &temp_children);
+        vector<IntElement *> &temp_children,
+        ostream &log);
 #endif

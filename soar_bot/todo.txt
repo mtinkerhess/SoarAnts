@@ -1,0 +1,2 @@
+Ants are separate agents, so they no longer know who has already decided to move where.
+So I need some kind of thing on the input link to say where ants have decided to move to already.

@@ -16,6 +16,8 @@ using namespace sml;
 // Adds these to the temp_children array so that someone else can clean them up later.
 Identifier *make_child(Agent *agent, Identifier *parent, const char *name, int col, int row, vector<Identifier *> &temp_children, vector<vector<SquareIdWME> > &grid_ids);
 
+void print_callback(smlPrintEventId id, void* pUserData, Agent* pAgent, char const* pMessage);
+
 double rand_double();
 int rand_int(int range);
 

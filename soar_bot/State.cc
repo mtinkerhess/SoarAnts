@@ -30,10 +30,14 @@ void State::reset()
     myHills.clear();
     enemyHills.clear();
     food.clear();
-    for(int row=0; row<rows; row++)
-        for(int col=0; col<cols; col++)
-            if(!grid[row][col].isWater)
+    for(int row=0; row<rows; row++) {
+        for(int col=0; col<cols; col++) {
+            grid[row][col].isDestination = false;
+            if(!grid[row][col].isWater) {
                 grid[row][col].reset();
+            }
+        }
+    }
 };
 
 //outputs move information to the engine
@@ -44,6 +48,7 @@ void State::makeMove(const Location &loc, int direction)
     Location nLoc = getLocation(loc, direction);
     grid[nLoc.row][nLoc.col].ant = grid[loc.row][loc.col].ant;
     grid[loc.row][loc.col].ant = -1;
+    grid[nLoc.row][nLoc.col].isDestination = true;
 };
 
 //returns the euclidean distance between two locations with the edges wrapped

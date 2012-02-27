@@ -30,6 +30,10 @@ using namespace sml;
             hill_player_id->Update(square.hillPlayer);
             was_hill_player = square.hillPlayer;
         }
+        if (square.isDestination != was_destination) {
+            is_destination->Update(square.isDestination ? "true" : "false");
+            was_destination = square.isDestination;
+        }
     }
 
 SquareIdWME::SquareIdWME(
@@ -38,6 +42,7 @@ SquareIdWME::SquareIdWME(
             StringElement *is_water,
             StringElement *is_hill,
             StringElement *is_food,
+            StringElement *is_destination,
             IntElement *ant_player_id,
             IntElement *hill_player_id)
         :
@@ -46,6 +51,7 @@ SquareIdWME::SquareIdWME(
             is_water(is_water),
             is_hill(is_hill),
             is_food(is_food),
+            is_destination(is_destination),
             ant_player_id(ant_player_id),
             hill_player_id(hill_player_id),
 

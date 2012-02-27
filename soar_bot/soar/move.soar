@@ -1,5 +1,5 @@
 gp {ants*propose*move
-(state <s> ^name ants ^ant <a> ^turn <t>)
+(state <s> ^name ants ^ant <a> ^turn <t> ^me.ant <ant>)
 (<a> ^player-id 0 -^moved-to)
 -->
 (<s> ^operator <o> + =)
@@ -42,32 +42,40 @@ sp {ants*elaborate*move-destination*stay
 
 sp {ants*move*reject-collision*water
 (state <s> ^name ants ^operator <o> +)
-(<o> ^name move ^destination.water true)
+(<o> ^name move ^destination <d>)
+(<d> ^water true ^col <col> ^row <row>)
 -->
+(write |Rejecting water collision at | <col> |, | <row> (crlf))
 (<s> ^operator <o> -)}
 
 sp {ants*move*reject-collision*ant
 (state <s> ^name ants ^operator <o> +)
 (<o> ^name move ^destination <dest> ^ant <ant>)
 (<dest> ^<< up down left right >>.ant {<> <ant> <other-ant>})
+(<dest> ^col <col> ^row <row>)
 (<other-ant> ^moved-to <dest>)
 -->
+(write |Rejecting ant collision at | <col> |, | <row> (crlf))
 (<s> ^operator <o> -)}
 
 sp {ants*move*reject-collision*ant-stay
 (state <s> ^name ants ^operator <o> +)
 (<other-ant> ^moved-to <dest>)
 (<dest> ^ant <other-ant>)
+(<dest> ^col <col> ^row <row>)
 (<o> ^name move ^destination <dest> ^ant {<> <other-ant> <ant>})
 -->
+(write |Rejecting ant collision with stay at | <col> |, | <row> (crlf))
 (<s> ^operator <o> -)}
 
 sp {ants*move*reject-collision*ant-unmoved
 (state <s> ^name ants ^operator <o> +)
 (<o> ^name move ^destination <dest> ^ant <ant>)
 (<dest> ^ant {<> <ant> <other-ant>})
+(<dest> ^col <col> ^row <row>)
 (<other-ant> -^moved-to <other-dest>)
 -->
+(write |Rejecting ant collision unmoved at | <col> |, | <row> (crlf))
 (<s> ^operator <o> -)}
 
 #sp {ants*elaborate*prefer*move-stay
@@ -96,9 +104,12 @@ sp {ants*apply*move-direction
 (<m> ^col <col> ^row <row> ^direction <d>)}
 
 sp {ants*apply*move-stay
-(state <s> ^operator <o> ^ant <a>)
+(state <s> ^operator <o> ^ant <a> ^io.output-link <ol>)
 (<o> ^name move ^direction stay ^ant <a> ^destination <dest>)
+(<a> ^col <col> ^row <row>)
 -->
+(<ol> ^move <m>)
+(<m> ^col <col> ^row <row> ^direction stay)
 (<a> ^moved-to <dest>)}
 
 sp {ants*elaborate*direction-structs
