@@ -9,12 +9,15 @@
 using namespace std;
 using namespace sml;
 
-AntAgent::AntAgent(Location location, Kernel *kernel, const string &name, Bot *bot) : kernel(kernel), bot(bot), turn(-1), alive(true), location(location),
+AntAgent::AntAgent(Location location, Kernel *kernel, const string &name, Bot *bot) : kernel(kernel), bot(bot), turn(-1), alive(true),
+    num_moves(0),
+    cumulative_reward(0.0),
+    location(location),
     last_move(-1), name(name)
 {
     soar_agent = kernel->CreateAgent(name.c_str());
     stringstream source_command;
-    source_command << "source ants.soar";
+    source_command << "source ants.soar ; source rl_template.soar"; // Source saved rl-values
     soar_agent->ExecuteCommandLine(source_command.str().c_str());
     soar_agent->RegisterForPrintEvent(smlEVENT_PRINT, print_callback, &(bot->soar_log));
     bot->soar_log << "Registered for print event callback" << endl;
@@ -36,7 +39,7 @@ AntAgent::~AntAgent() {
   * num_dijk_values: How many dijk values there are (could this be inferred from dijk_values.size()?)
   */
 void AntAgent::update_input_link(const State &state, const Location &location, const vector<vector<vector<int> > > &dijk_values, const string dijk_attr_names[], int num_dijk_values) {
-    bot->soar_log << "updating input link for " << name << endl;
+    bot->soar_log << "updating input link for " << name << " (" << location.col << ", " << location.row << ")" << endl;
     this->location = location;
     bot->soar_log << "new turn is: " << state.turn << endl;
     soar_agent->Update(turn_wme, state.turn);
@@ -55,13 +58,21 @@ void AntAgent::update_input_link(const State &state, const Location &location, c
 //        for (int row = 0; row < state.rows; ++row) {
     for (int d_col = -1; d_col <= 1; ++d_col) {
         for (int d_row = -1; d_row <= 1; ++d_row) {
-            int col = (location.col + d_col) % state.cols;
-            int row = (location.row + d_row) % state.rows;
+            int col = (location.col + d_col + state.cols) % state.cols;
+            int row = (location.row + d_row + state.rows) % state.rows;
+            bot->soar_log << "Handling cell " << col << " " << row << endl;
             const Square &square = state.grid[row][col];
 
             // Update grid cell
             SquareIdWME &square_wme = grid_ids[col][row];
             square_wme.Update(square);
+
+            // For debugging
+            // Log if this square is a destination
+            if (square_wme.was_destination) {
+                bot->soar_log << "Square is destination (" << col << ", " << row << ")" << endl;
+            }
+
             // Update item wmes
             if (square.isWater) {
                 bot->soar_log << "Making water tag: " << col << ", " << row << endl;
@@ -87,6 +98,7 @@ void AntAgent::update_input_link(const State &state, const Location &location, c
             }
         }
     }
+    bot->soar_log << "Updated all grid flags" << endl;
 
     // Update dijkstra values.
     for (int value = 0; value < num_dijk_values; ++value) {
@@ -138,6 +150,8 @@ void AntAgent::init_input_link(const State &state, const Location &location) {
 
 // Shouldn't be called until either init_input_link or update_input_link has been called this turn.
 int AntAgent::move(const State &state, double previous_reward) {
+    ++num_moves;
+    cumulative_reward += previous_reward;
     bot->soar_log << "MOVE called on ant " << name << endl;
     if (!alive) return -1;
     soar_agent->Update(reward_wme, previous_reward);
@@ -186,4 +200,27 @@ int AntAgent::move(const State &state, double previous_reward) {
 void AntAgent::die() {
     alive = false;
     // TODO put negative reward on input link
+}
+
+void AntAgent::end() {
+
+    // Write rules to file
+    const char *rl_filename = rl_dump_filename();
+    ofstream rl_file(rl_filename, ios_base::app);
+    rl_file << "# RL rules for agent \"" << name << "\"" << "\n";
+    rl_file << "# Number of moves: " << num_moves << "\n";
+    rl_file << "# Cumulatuve reward: " << cumulative_reward << "\n" << endl;
+    rl_file.close();
+
+    char buff[100];
+    stringstream firing_counts(soar_agent->ExecuteCommandLine("print --rl"));
+    while(!firing_counts.eofbit) {
+        firing_counts.getline(buff, 100);
+        // TODO write firing count data to log file
+    }
+
+    stringstream command;
+    command << "command-to-file --append " << rl_filename << " print --full --rl";
+    soar_agent->ExecuteCommandLine(command.str().c_str());
+
 }

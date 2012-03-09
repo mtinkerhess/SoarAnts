@@ -1,2 +1,8 @@
 Ants are separate agents, so they no longer know who has already decided to move where.
 So I need some kind of thing on the input link to say where ants have decided to move to already.
+
+DONE
+
+Now I need to:
+1) Weight global rl rule updates by the number of times each rule was updated, not by the number of moves that agent made.
+2) Give reward to each agent on an individual basis -- this may not be possible?

@@ -1,9 +1,10 @@
 gp {ants*propose*move
-(state <s> ^name ants ^ant <a> ^turn <t> ^me.ant <ant>)
-(<a> ^player-id 0 -^moved-to)
+(state <s> ^name ants ^ant <ant> ^turn <t> ^me <me>)
+(<me> ^ant <ant>)
+(<ant> ^player-id 0 ^row <row> ^col <col>)
 -->
 (<s> ^operator <o> + =)
-(<o> ^name move ^ant <a> ^direction [up down left right stay] )}
+(<o> ^name move ^ant <ant> ^direction [up down left right stay] )}
 
 sp {ants*elaborate*move-destination*up
 (state <s> ^name ants ^operator <o> +)
@@ -51,21 +52,10 @@ sp {ants*move*reject-collision*water
 sp {ants*move*reject-collision*ant
 (state <s> ^name ants ^operator <o> +)
 (<o> ^name move ^destination <dest> ^ant <ant>)
-(<dest> ^<< up down left right >>.ant {<> <ant> <other-ant>})
+(<dest> ^destination true)
 (<dest> ^col <col> ^row <row>)
-(<other-ant> ^moved-to <dest>)
 -->
 (write |Rejecting ant collision at | <col> |, | <row> (crlf))
-(<s> ^operator <o> -)}
-
-sp {ants*move*reject-collision*ant-stay
-(state <s> ^name ants ^operator <o> +)
-(<other-ant> ^moved-to <dest>)
-(<dest> ^ant <other-ant>)
-(<dest> ^col <col> ^row <row>)
-(<o> ^name move ^destination <dest> ^ant {<> <other-ant> <ant>})
--->
-(write |Rejecting ant collision with stay at | <col> |, | <row> (crlf))
 (<s> ^operator <o> -)}
 
 sp {ants*move*reject-collision*ant-unmoved
@@ -73,7 +63,6 @@ sp {ants*move*reject-collision*ant-unmoved
 (<o> ^name move ^destination <dest> ^ant <ant>)
 (<dest> ^ant {<> <ant> <other-ant>})
 (<dest> ^col <col> ^row <row>)
-(<other-ant> -^moved-to <other-dest>)
 -->
 (write |Rejecting ant collision unmoved at | <col> |, | <row> (crlf))
 (<s> ^operator <o> -)}
@@ -100,7 +89,6 @@ sp {ants*apply*move-direction
 (<a> ^col <col> ^row <row>)
 -->
 (<ol> ^move <m>)
-(<a> ^moved-to <dest>)
 (<m> ^col <col> ^row <row> ^direction <d>)}
 
 sp {ants*apply*move-stay
@@ -109,8 +97,7 @@ sp {ants*apply*move-stay
 (<a> ^col <col> ^row <row>)
 -->
 (<ol> ^move <m>)
-(<m> ^col <col> ^row <row> ^direction stay)
-(<a> ^moved-to <dest>)}
+(<m> ^col <col> ^row <row> ^direction stay)}
 
 sp {ants*elaborate*direction-structs
 (state <s> ^name ants)
@@ -142,7 +129,7 @@ sp {ants*elaborate*move*direction
 -->
 (<o> ^direction-struct <dir-struct>)}
 
-sp {ants*rl*move*toward-food
+sp {ants*rl*move*mark-toward-food
 (state <s> ^name ants ^operator <o> +)
 (<o> ^name move ^ant <ant> ^destination.distance-to-food <dist>)
 -{
@@ -150,13 +137,17 @@ sp {ants*rl*move*toward-food
 (<o2> ^name move ^ant <ant> ^destination.distance-to-food < <dist>)
 }
 -->
+(<o> ^toward-food true)}
+
+sp {ants*rl*move*toward-food
+(state <s> ^name ants ^operator <o> +)
+(<o> ^toward-food true)
+-->
 (<s> ^operator <o> = 0.0)}
 
 sp {ants*rl*move*not-toward-food
 (state <s> ^name ants ^operator <o> +)
-(<o> ^name move ^ant <ant> ^destination.distance-to-food <dist> )
-(<s> ^operator { <> <o> <o2> } +)
-(<o2> ^name move ^ant <ant> ^destination.distance-to-food < <dist>)
+(<o> -^toward-food true)
 -->
 (<s> ^operator <o> = 0.0)}
 

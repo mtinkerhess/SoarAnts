@@ -5,3 +5,6 @@ MyBot
 log.txt
 ants-rl.soar
 .project
+rl_dump.soar
+rl_template.soar
+script_log.txt

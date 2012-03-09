@@ -135,7 +135,6 @@ void Bot::playGame()
             soar_log << "Moved in direction " << direction << ", expected in location " << next_location.str() << endl;
         }
 
-
         // Delete agents that didn't move this turn.
         // Also mark them as dead for good measure
         vector<Location> to_remove;
@@ -144,10 +143,12 @@ void Bot::playGame()
             if (ant_agent->second->turn != state.turn) {
                 soar_log << "Deleting obsolete agent " << ant_agent->second->name << endl;
                 ant_agent->second->die();
+                ant_agent->second->end();
                 delete ant_agent->second; // Takes care of deleting the Soar agent via the kernel.
                 to_remove.push_back(ant_agent->first);
             }
         }
+
         for (vector<Location>::const_iterator it = to_remove.begin();
                 it != to_remove.end(); ++it) {
             ant_agents->erase(*it);
@@ -158,9 +159,14 @@ void Bot::playGame()
         delete ant_agents;
         ant_agents = next_ant_agents;
 
-
         //makeMoves();
         endTurn();
+    }
+
+    // Call end on all ants that are still alive
+    for (map<Location, AntAgent*>::iterator ant_agent = ant_agents->begin();
+            ant_agent != ant_agents->end(); ++ant_agent) {
+        ant_agent->second->end();
     }
 }
 

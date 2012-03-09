@@ -35,6 +35,12 @@ class AntAgent {
         // Is this ant alive?
         bool alive;
 
+        // How many times this ant made a move
+        int num_moves;
+
+        // Total cumulative reward received by this ant.
+        double cumulative_reward;
+
         // The expected location of the ant.
         Location location;
 
@@ -68,6 +74,11 @@ class AntAgent {
 
         // Call when then ant dies.
         void die();
+
+        // Call when the simulation is over.
+        void end();
+
+        static const char *rl_dump_filename() { return "rl_dump.soar"; }
 
 };
 #endif
