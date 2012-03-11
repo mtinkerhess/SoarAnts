@@ -5,4 +5,8 @@ DONE
 
 Now I need to:
 1) Weight global rl rule updates by the number of times each rule was updated, not by the number of moves that agent made.
+For this, I need to use the version on Soar on Daidalos that includes printing update counts when you print a rule.
+
 2) Give reward to each agent on an individual basis -- this may not be possible?
+
+

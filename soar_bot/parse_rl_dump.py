@@ -9,13 +9,16 @@ def average(values):
     return sum(values) / float(len(values))
 
 def learns():
-    keys = ('# Number of moves: ', '# Cumulatuve reward: ')
-    key_values = [0, 0]
+    keys = ('# Number of moves: ', '# Cumulatuve reward: ', '# Rule update: ')
+    key_values = [0, 0, 0]
     rules = {}
     for line in open(rl_dump):
         for i, key in enumerate(keys):
             if key in line:
-                key_values[i] = int(line.strip()[len(key):])
+                if i == 2:
+                    key_values[i] = int(line.strip()[len(key):].split()[1].split('.')[0])
+                else:
+                    key_values[i] = int(line.strip()[len(key):])
             elif 'sp {' in line:
                 rule_name = line.strip()[4:]
             elif op_val in line:
@@ -25,7 +28,7 @@ def learns():
                 rules[rule_name] = rule_value
             elif '# RL rules for agent ' in line and len(rules) > 0:
                 yield (key_values, rules)
-                key_values = [0, 0]
+                key_values = [0, 0, 0]
                 rules = {}
     if len(rules) > 0:
         yield (key_values, rules)
@@ -45,7 +48,8 @@ def write_templates(rule_totals):
                 val_index = line.find(op_val) + len(op_val)
                 paren_index = line.find(')', val_index)
                 line = line[:val_index] + str(average(rule_totals[rule_name])) + line[paren_index:]
-            read[rule_name].append(line.strip())
+            if line[0] != '#':
+                read[rule_name].append(line.strip())
     with open(template, 'w') as f:
         for rule_name in read.keys():
             f.write('\n'.join(read[rule_name]))
@@ -59,6 +63,7 @@ def main():
                 if not rule_name in rule_totals:
                     rule_totals[rule_name] = []
                 for i in range(learn[0][0]):
+#                for i in range(learn[0][2]):
                     rule_totals[rule_name].append(learn[1][rule_name])
         for rule_name in rule_totals.keys():
             f.write(rule_name + ' ')

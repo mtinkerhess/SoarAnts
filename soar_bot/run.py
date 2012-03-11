@@ -4,7 +4,7 @@ from os import system
 import os
 
 def main():
-    num_rounds = 100
+    num_rounds = 1
     try:
         os.remove('script_log.txt')
     except:
