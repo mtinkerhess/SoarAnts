@@ -1,8 +1,8 @@
-watch 5
+watch 0
 watch --rl
 rl --set learning on
 rl --set learning-rate 0.05
 rl --set eligibility-trace-decay-rate 0.9
 rl --set discount-rate 0.9
-indifferent-selection -e
+indifferent-selection -t
 gp-max 1000000000

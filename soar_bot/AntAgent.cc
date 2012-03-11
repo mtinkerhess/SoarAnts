@@ -60,7 +60,7 @@ void AntAgent::update_input_link(const State &state, const Location &location, c
         for (int d_row = -1; d_row <= 1; ++d_row) {
             int col = (location.col + d_col + state.cols) % state.cols;
             int row = (location.row + d_row + state.rows) % state.rows;
-            bot->soar_log << "Handling cell " << col << " " << row << endl;
+//            bot->soar_log << "Handling cell " << col << " " << row << endl;
             const Square &square = state.grid[row][col];
 
             // Update grid cell
@@ -69,13 +69,15 @@ void AntAgent::update_input_link(const State &state, const Location &location, c
 
             // For debugging
             // Log if this square is a destination
+            /*
             if (square_wme.was_destination) {
                 bot->soar_log << "Square is destination (" << col << ", " << row << ")" << endl;
             }
+            */
 
             // Update item wmes
             if (square.isWater) {
-                bot->soar_log << "Making water tag: " << col << ", " << row << endl;
+//                bot->soar_log << "Making water tag: " << col << ", " << row << endl;
                 make_child(soar_agent, il, "water", col, row, temp_children, grid_ids);
             }
             if (!square.isVisible) {
@@ -90,15 +92,16 @@ void AntAgent::update_input_link(const State &state, const Location &location, c
                 make_child(soar_agent, il, "food", col, row, temp_children, grid_ids);
             }
             if (square.ant >= 0) {
+/*
                 if (d_col != 0 || d_row != 0) {
                     bot->soar_log << "Making ant tag: " << col << ", " << row << endl;
                 }
+                */
                 Identifier *child = make_child(soar_agent, il, "ant", col, row, temp_children, grid_ids);
                 soar_agent->CreateIntWME(child, "player-id", square.ant);
             }
         }
     }
-    bot->soar_log << "Updated all grid flags" << endl;
 
     // Update dijkstra values.
     for (int value = 0; value < num_dijk_values; ++value) {
@@ -209,15 +212,32 @@ void AntAgent::end() {
     ofstream rl_file(rl_filename, ios_base::app);
     rl_file << "# RL rules for agent \"" << name << "\"" << "\n";
     rl_file << "# Number of moves: " << num_moves << "\n";
-    rl_file << "# Cumulatuve reward: " << cumulative_reward << "\n" << endl;
-    rl_file.close();
+    rl_file << "# Cumulatuve reward: " << cumulative_reward << "\n";
 
     char buff[100];
-    stringstream firing_counts(soar_agent->ExecuteCommandLine("print --rl"));
-    while(!firing_counts.eofbit) {
-        firing_counts.getline(buff, 100);
+    stringstream print_rl_result(soar_agent->ExecuteCommandLine("print --rl"));
+
+    bot->soar_log << "ANT END" << endl;
+    bot->soar_log << "moves " << num_moves << endl;
+
+    while(!print_rl_result.eof()) {
+        print_rl_result.getline(buff, 100);
+        if (strlen(buff) == 0) { continue; }
+        bot->soar_log << "line: \"" << buff << "\"" << endl;
         // TODO write firing count data to log file
+        stringstream line_buff(buff);
+        string line_token;
+        line_buff >> line_token;
+        stringstream rule_print_command;
+        rule_print_command << "print " << line_token;
+        string rule_print(soar_agent->ExecuteCommandLine(rule_print_command.str().c_str()));
+        rl_file << "# Rule update: " << buff << "\n" << endl;
+        bot->soar_log << "command: " << rule_print_command.str() << endl;
+        bot->soar_log << "output: " << rule_print << endl;
     }
+    bot->soar_log << "done with END" << endl;
+
+    rl_file.close();
 
     stringstream command;
     command << "command-to-file --append " << rl_filename << " print --full --rl";
