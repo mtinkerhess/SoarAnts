@@ -276,8 +276,19 @@ istream& operator>>(istream &is, State &state)
 
 // Heloper funciton for State::getAttackOpponents.
 // Tells whether an offset is within some range.
-bool inRange(int d_row, int d_col, int range) {
-    return sqrt(static_cast<double>(d_row * d_row + d_col * d_col)) <= range;
+bool inRange(int d_row, int d_col, double range) {
+    double part = static_cast<double>(d_row * d_row + d_col * d_col);
+    double length = sqrt(part);
+    bool ret = length <= range;
+    return ret;
+}
+
+bool inRangeLog(int d_row, int d_col, double range, ofstream &soar_log) {
+    double part = static_cast<double>(d_row * d_row + d_col * d_col);
+    double length = sqrt(part);
+    bool ret = length <= range;
+//    soar_log << "In range?: sqrt(" << d_row << ", " << d_col << ") = " << length << " <= " << range << ": " << ret;
+    return ret;
 }
 
 // Gets the number of opponents of the given player within the attack radius of the given location.
@@ -329,7 +340,8 @@ int State::getAttackOpponents(int loc_row, int loc_col, int playerId, bool upper
 
 // Gets a list of the locations that an enemy of this player might be at next turn that are
 // within the attack radius.
-vector<pair<int, int> > State::getPossibleOpponentLocations(int loc_row, int loc_col, int playerId) const {
+vector<pair<int, int> > State::getPossibleOpponentLocations(int loc_row, int loc_col, int playerId, ofstream &soar_log) const {
+//    soar_log << "Getting possible opponent locations, (" << loc_row << ", " << loc_col << ") for player " << playerId << ", attack radius " << attackradius << endl;
     static const int directions[5][2] = {{0, 0}, {0, 1}, {0, -1}, {1, 0}, {-1, 0}};
     static const int num_directions = 5;
     vector<pair<int, int> > ret;
@@ -337,26 +349,37 @@ vector<pair<int, int> > State::getPossibleOpponentLocations(int loc_row, int loc
         for (int d_col = -attackradius - 1; d_col <= attackradius + 1; ++d_col) {
             int row = (loc_row + d_row + rows) % rows;
             int col = (loc_col + d_col + cols) % cols;
+//            soar_log << "checking (" << row << ", " << col << "), ant is " << grid[row][col].ant << endl;
             if (grid[row][col].ant >= 0 && grid[row][col].ant != playerId) {
+//                soar_log << "FOUND enemy ant: " << col << ", " << row << endl;
                 if (grid[row][col].isDestination) {
                     // The opponent ant has moved 
                     // Check the range.
                     if (inRange(d_col, d_row, attackradius)) {
+                        soar_log << "Enemy ant was in range!" << endl;
                         ret.push_back(make_pair(row, col));
+                    } else {
+                        soar_log << "Enemy ant had moved and wasn't in range" << endl;
                     }
                 } else {
+//                    soar_log << "enemy hasn't moved" << endl;
                     // The opponent ant hasn't moved
                     // Check to see if any adjacent square is in range.
                     // Also check the opponent's square itself.
                     for (int direction = 0; direction < num_directions; ++direction) {
-                        if (inRange(d_row + directions[direction][0], d_col + directions[direction][1], attackradius)) {
-                            int adj_row = (row + d_row + rows) % rows;
-                            int adj_col = (col + d_col + cols) % cols;
+//                        soar_log << "direction = " << direction << endl;
+                        int d_d_row = directions[direction][0];
+                        int d_d_col = directions[direction][1];
+//                        soar_log << "d_d " << d_d_row << ", " << d_d_col << endl;
+                        if (inRangeLog(d_row + d_d_row, d_col + d_d_col, attackradius, soar_log)) {
+                            int adj_row = (row + d_d_row + rows) % rows;
+                            int adj_col = (col + d_d_col + cols) % cols;
                             ret.push_back(make_pair(adj_row, adj_col));
+                            soar_log << "Found square adjacent or on enemy that's in range: " << adj_row << ", " << adj_col << endl;
                         }
                     }
+//                    soar_log << "done with loop, num_directions " << num_directions << endl;
                 }
- 
             }
         }
     }

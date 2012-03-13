@@ -1,5 +1,6 @@
-watch 5
+watch 0
 watch --rl
+timers -d
 rl --set learning on
 rl --set learning-rate 0.05
 rl --set eligibility-trace-decay-rate 0.9

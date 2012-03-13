@@ -68,7 +68,7 @@ struct State
 
     // Gets a list of the locations that an enemy of this player might be at next turn that are
     // within the attack radius.
-    vector<pair<int, int> > getPossibleOpponentLocations(int loc_row, int loc_col, int playerId) const;
+    vector<pair<int, int> > getPossibleOpponentLocations(int loc_row, int loc_col, int playerId, ofstream &soar_log) const;
 };
 
 std::ostream& operator<<(std::ostream &os, const State &state);
