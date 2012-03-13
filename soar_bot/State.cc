@@ -64,6 +64,7 @@ double State::distance(const Location &loc1, const Location &loc2)
 //returns the new location from moving in a given direction with the edges wrapped
 Location State::getLocation(const Location &loc, int direction)
 {
+    if (direction < 0) return loc;
     return Location( (loc.row + DIRECTIONS[direction][0] + rows) % rows,
                      (loc.col + DIRECTIONS[direction][1] + cols) % cols );
 };
@@ -226,10 +227,12 @@ istream& operator>>(istream &is, State &state)
             {
                 is >> row >> col >> player;
                 state.grid[row][col].ant = player;
-                if(player == 0)
+                if(player == 0) {
                     state.myAnts.push_back(Location(row, col));
-                else
+                }
+                else { 
                     state.enemyAnts.push_back(Location(row, col));
+                }
             }
             else if(inputType == "d") //dead ant square
             {
@@ -270,3 +273,92 @@ istream& operator>>(istream &is, State &state)
 
     return is;
 };
+
+// Heloper funciton for State::getAttackOpponents.
+// Tells whether an offset is within some range.
+bool inRange(int d_row, int d_col, int range) {
+    return sqrt(static_cast<double>(d_row * d_row + d_col * d_col)) <= range;
+}
+
+// Gets the number of opponents of the given player within the attack radius of the given location.
+// Returns a lower bound unless upperBound is true, in which case returns an upper bound.
+int State::getAttackOpponents(int loc_row, int loc_col, int playerId, bool upperBound) const {
+    int ret = 0;
+
+    static const int directions[5][2] = {{0, 0}, {0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+    static const int num_directions = 5;
+
+    // Loop over attack range + 1 to simplify in case we want an upper bound.
+    for (int d_row = -attackradius - 1; d_row <= attackradius + 1; ++d_row) {
+        for (int d_col = -attackradius - 1; d_col <= attackradius + 1; ++d_col) {
+            int row = (loc_row + d_row + rows) % rows;
+            int col = (loc_col + d_col + cols) % cols;
+            // If there is an opponent ant here, see if the ant is within the given bounds,
+            // Depending on: upperBound = true / false; square.isDestination
+            if (grid[row][col].ant >= 0 && grid[row][col].ant != playerId) {
+                // There is an opponent ant in this square.
+                // 2 cases: the ant has moved or it hasn't.
+                if (grid[row][col].isDestination) {
+                    // The opponent ant has moved 
+                    // Check the range.
+                    if (inRange(d_col, d_row, attackradius)) {
+                        ++ret;
+                    }
+                } else {
+                    // The opponent ant hasn't moved
+                    // Check to see if any adjacent square is in range.
+                    // If not, assume the square itself is not in range.
+                    bool allInRange = true;
+                    bool someInRange = false;
+                    for (int direction = 0; direction < num_directions; ++direction) {
+                        if (inRange(d_row + directions[direction][0], d_col + directions[direction][1], attackradius)) {
+                            someInRange = true;
+                        } else {
+                            allInRange = false;
+                        }
+                    }
+                    // Depends on upperBound
+                    if ((upperBound && someInRange) || (!upperBound && allInRange)) {
+                        ++ret;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Gets a list of the locations that an enemy of this player might be at next turn that are
+// within the attack radius.
+vector<pair<int, int> > State::getPossibleOpponentLocations(int loc_row, int loc_col, int playerId) const {
+    static const int directions[5][2] = {{0, 0}, {0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+    static const int num_directions = 5;
+    vector<pair<int, int> > ret;
+    for (int d_row = -attackradius - 1; d_row <= attackradius + 1; ++d_row) {
+        for (int d_col = -attackradius - 1; d_col <= attackradius + 1; ++d_col) {
+            int row = (loc_row + d_row + rows) % rows;
+            int col = (loc_col + d_col + cols) % cols;
+            if (grid[row][col].ant >= 0 && grid[row][col].ant != playerId) {
+                if (grid[row][col].isDestination) {
+                    // The opponent ant has moved 
+                    // Check the range.
+                    if (inRange(d_col, d_row, attackradius)) {
+                        ret.push_back(make_pair(row, col));
+                    }
+                } else {
+                    // The opponent ant hasn't moved
+                    // Check to see if any adjacent square is in range.
+                    // Also check the opponent's square itself.
+                    for (int direction = 0; direction < num_directions; ++direction) {
+                        if (inRange(d_row + directions[direction][0], d_col + directions[direction][1], attackradius)) {
+                            int adj_row = (row + d_row + rows) % rows;
+                            int adj_col = (col + d_col + cols) % cols;
+                            ret.push_back(make_pair(adj_row, adj_col));
+                        }
+                    }
+                }
+ 
+            }
+        }
+    }
+    return ret;
+}

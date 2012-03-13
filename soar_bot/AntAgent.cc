@@ -39,6 +39,11 @@ AntAgent::~AntAgent() {
   * num_dijk_values: How many dijk values there are (could this be inferred from dijk_values.size()?)
   */
 void AntAgent::update_input_link(const State &state, const Location &location, const vector<vector<vector<int> > > &dijk_values, const string dijk_attr_names[], int num_dijk_values) {
+
+    // Includes the "stay" direction
+    static const int directions[5][2] = {{0, 0}, {0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+    static const int num_directions = 5;
+
     bot->soar_log << "updating input link for " << name << " (" << location.col << ", " << location.row << ")" << endl;
     this->location = location;
     bot->soar_log << "new turn is: " << state.turn << endl;
@@ -54,13 +59,11 @@ void AntAgent::update_input_link(const State &state, const Location &location, c
     temp_int_children.clear();
 
     // Update grid flags
-//    for (int col = 0; col < state.cols; ++col) {
-//        for (int row = 0; row < state.rows; ++row) {
     for (int d_col = -1; d_col <= 1; ++d_col) {
         for (int d_row = -1; d_row <= 1; ++d_row) {
             int col = (location.col + d_col + state.cols) % state.cols;
             int row = (location.row + d_row + state.rows) % state.rows;
-//            bot->soar_log << "Handling cell " << col << " " << row << endl;
+//            bot->soar_log << "Cell: " << col << ", " << row << endl;
             const Square &square = state.grid[row][col];
 
             // Update grid cell
@@ -69,11 +72,11 @@ void AntAgent::update_input_link(const State &state, const Location &location, c
 
             // For debugging
             // Log if this square is a destination
-            /*
+//            /*
             if (square_wme.was_destination) {
-                bot->soar_log << "Square is destination (" << col << ", " << row << ")" << endl;
+//                bot->soar_log << "Square is destination (" << col << ", " << row << ")" << endl;
             }
-            */
+//            */
 
             // Update item wmes
             if (square.isWater) {
@@ -81,25 +84,74 @@ void AntAgent::update_input_link(const State &state, const Location &location, c
                 make_child(soar_agent, il, "water", col, row, temp_children, grid_ids);
             }
             if (!square.isVisible) {
+//                bot->soar_log << "Square not visible: " << col << ", " << row << endl;
                 // Nothing else we can tell about this square.
                 continue;
             }
             if (square.isHill) {
                 Identifier *child = make_child(soar_agent, il, "hill", col, row, temp_children, grid_ids);
                 soar_agent->CreateIntWME(child, "player-id", square.hillPlayer);
+                stringstream playerIdString;
+                playerIdString << square.hillPlayer;
+                soar_agent->CreateStringWME(child, "player-id-string", playerIdString.str().c_str());
             }
             if (square.isFood) {
                 make_child(soar_agent, il, "food", col, row, temp_children, grid_ids);
             }
             if (square.ant >= 0) {
-/*
                 if (d_col != 0 || d_row != 0) {
-                    bot->soar_log << "Making ant tag: " << col << ", " << row << endl;
+//                    bot->soar_log << "Making ant tag: " << col << ", " << row << endl;
                 }
-                */
                 Identifier *child = make_child(soar_agent, il, "ant", col, row, temp_children, grid_ids);
                 soar_agent->CreateIntWME(child, "player-id", square.ant);
+                stringstream playerIdString;
+                playerIdString << square.ant;
+                soar_agent->CreateStringWME(child, "player-id-string", playerIdString.str().c_str());
             }
+
+            // Check this square and all immediately adjacent squares for ants that haven't moved.
+            // For each player-id on immediately adjacent ants,
+            // add two flags to this square:
+            // One each for lower and upper bounds on the number of opponent
+            // ants from this square.
+//            bot->soar_log << "About to find adjacent ants: " << col << ", " << row << endl;
+            set<int> adjacentAnts;
+            for (int direction = 0; direction < num_directions; ++direction) {
+                int adj_row = (row + directions[direction][0] + state.rows) % state.rows;
+                int adj_col = (col + directions[direction][1] + state.cols) % state.cols;
+                if (state.grid[adj_row][adj_col].isDestination) {
+                    // This ant has moved already.
+                    continue;
+                }
+                int ant_id = state.grid[adj_row][adj_col].ant;
+                if (ant_id >= 0) {
+//                    bot->soar_log << "Found adjacent ant, id: " << ant_id;
+                    adjacentAnts.insert(ant_id);
+                }
+            }
+
+//            bot->soar_log << "Found all adjacent ants" << endl;
+
+            // TODO use player wmes insteadof player-x in the name of the wme
+
+            for (set<int>::const_iterator adjacentAnt = adjacentAnts.begin(); adjacentAnt != adjacentAnts.end(); ++adjacentAnt) {
+//                bot->soar_log << "Getting attackable opponents for ant-id: " << *adjacentAnt << endl;
+                int lowerBound = state.getAttackOpponents(row, col, *adjacentAnt, false);
+                int upperBound = state.getAttackOpponents(row, col, *adjacentAnt, true);
+                temp_int_children.push_back(soar_agent->CreateIntWME(grid_ids[col][row].player_roots[*adjacentAnt], "enemies-lower-bound", lowerBound));
+                temp_int_children.push_back(soar_agent->CreateIntWME(grid_ids[col][row].player_roots[*adjacentAnt], "enemies-upper-bound", upperBound));
+
+                // Also create shared-wme links from this cell to each cell that may contain enemies of any non-moved adjacent ants.
+                vector<pair<int, int> > possibleOpponentLocations = state.getPossibleOpponentLocations(row, col, *adjacentAnt);
+                for (vector<pair<int, int> >::const_iterator possibleOpponentLocation = possibleOpponentLocations.begin();
+                        possibleOpponentLocation != possibleOpponentLocations.end(); ++possibleOpponentLocation) {
+                    bot->soar_log << "adding link for possible opponent at " << possibleOpponentLocation->first << ", " << possibleOpponentLocation->second << endl;
+                    temp_children.push_back(soar_agent->CreateSharedIdWME(grid_ids[row][col].player_roots[*adjacentAnt], "possible-enemy",
+                                grid_ids[possibleOpponentLocation->first][possibleOpponentLocation->second].root));
+                }
+
+            }
+//            bot->soar_log << "Found all attackable opponents" << endl;
         }
     }
 
@@ -134,7 +186,7 @@ void AntAgent::init_input_link(const State &state, const Location &location) {
             StringElement *is_destination = soar_agent->CreateStringWME(root, "destination", "false"); // Whether an ant is planning on moving here
             IntElement *ant_id = soar_agent->CreateIntWME(root, "ant-id", -1);
             IntElement *hill_id = soar_agent->CreateIntWME(root, "hill-id", -2);
-            SquareIdWME square_wme(root, is_visible, is_water, is_hill, is_food, is_destination, ant_id, hill_id);
+            SquareIdWME square_wme(soar_agent, root, is_visible, is_water, is_hill, is_food, is_destination, ant_id, hill_id);
             soar_agent->CreateIntWME(root, "col", col);
             soar_agent->CreateIntWME(root, "row", row);
             grid_ids[col].push_back(square_wme);

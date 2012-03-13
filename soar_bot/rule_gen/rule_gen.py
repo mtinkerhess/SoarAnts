@@ -79,6 +79,8 @@ def generate_perception(index, radius, num_values):
     return [(points[i][0], points[i][1], index_perceptions[i]) for i in range(len(points))]
 
 def generate_perceptions(radius, num_values):
+    number_perceptions = num_perceptions(radius, num_values)
+    print number_perceptions
     return (generate_perception(index, radius, num_values) for index in range(num_perceptions(radius, num_values)))
 
 def make_perception_dict(perception):
@@ -220,7 +222,7 @@ def make_template(index, perceptions, canonical_indexes, values):
     parts.append('   (state <s> ^name ants ^operator <o> +)\n')
     parts.append('   (<o> ^name move canonical-index ' + str(canonical_indexes[index]) + ')\n')
     parts.append('-->\n')
-    parts.append('   (<s> ^operator <o> = 0.0)\n}\n\n')
+    parts.append('   (<s> ^operator <o> = 0.0)\n}\n')
     return ''.join(parts)
 
 def make_templates_from_perceptions(perceptions, canonical_indexes, values):
@@ -232,8 +234,8 @@ def make_templates(radius, values):
     return make_templates_from_perceptions(perceptions, canonical_indexes, values)
 
 def main():
-    radius = 1
-    values = (('ant.player-id', '<> 0'),)
+    radius = 5
+    values = (('ant.player-id', '<> 0'), ('ant.player-id', '0'))
     for template in make_templates(radius, values):
         print template
 

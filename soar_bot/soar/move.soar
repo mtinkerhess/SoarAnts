@@ -1,10 +1,64 @@
 gp {ants*propose*move
-(state <s> ^name ants ^ant <ant> ^turn <t> ^me <me>)
+(state <s> ^name ants ^ant <ant> ^turn <t> ^me <me> ^my-id.int <my-id>)
 (<me> ^ant <ant>)
-(<ant> ^player-id 0 ^row <row> ^col <col>)
+(<ant> ^player-id <my-id> ^row <row> ^col <col>)
 -->
 (<s> ^operator <o> + =)
 (<o> ^name move ^ant <ant> ^direction [up down left right stay] )}
+
+sp {ants*move*elaborate-enemy-bounds
+(state <s> ^name ants ^operator <o> + ^my-id.string <my-id>)
+(<o> ^name move ^destination.player.<my-id> <dest>)
+(<dest> ^enemies-lower-bound <lower> ^enemies-upper-bound <upper>)
+-->
+(<o> ^enemies-lower-bound <lower> ^enemies-upper-bound <upper>)}
+
+sp {ants*move*elaborate-enemy-locations
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^destination <dest>)
+(<dest> ^player.<my-id>.possible-enemy <possible>)
+-->
+(<o> ^possible-enemy <possible>)}
+
+gp {ants*move*rl*enemies*lower-lower
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^enemies-lower-bound <my-lower> ^enemies-upper-bound <my-upper> ^possible-enemy <enemy>)
+(<enemy> ^ant <enemy-ant>)
+(<enemy-ant> ^player-id-string <enemy-id>)
+(<enemy> ^player.<enemy-id> <enemy-player>)
+(<enemy-player> ^enemies-lower-bound { [ > < = ] <my-lower> <enemy-lower> })
+-->
+(<s> ^operator <o> = 0.0)}
+
+gp {ants*move*rl*enemies*lower-upper
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^enemies-lower-bound <my-lower> ^enemies-upper-bound <my-upper> ^possible-enemy <enemy>)
+(<enemy> ^ant <enemy-ant>)
+(<enemy-ant> ^player-id-string <enemy-id>)
+(<enemy> ^player.<enemy-id> <enemy-player>)
+(<enemy-player> ^enemies-upper-bound { [ > < = ] <my-lower> <enemy-upper> })
+-->
+(<s> ^operator <o> = 0.0)}
+
+gp {ants*move*rl*enemies*upper-lower
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^enemies-lower-bound <my-lower> ^enemies-upper-bound <my-upper> ^possible-enemy <enemy>)
+(<enemy> ^ant <enemy-ant>)
+(<enemy-ant> ^player-id-string <enemy-id>)
+(<enemy> ^player.<enemy-id> <enemy-player>)
+(<enemy-player> ^enemies-lower-bound { [ > < = ] <my-upper> <enemy-lower> })
+-->
+(<s> ^operator <o> = 0.0)}
+
+gp {ants*move*rl*enemies*upper-upper
+(state <s> ^name ants ^operator <o> +)
+(<o> ^name move ^enemies-lower-bound <my-lower> ^enemies-upper-bound <my-upper> ^possible-enemy <enemy>)
+(<enemy> ^ant <enemy-ant>)
+(<enemy-ant> ^player-id-string <enemy-id>)
+(<enemy> ^player.<enemy-id> <enemy-player>)
+(<enemy-player> ^enemies-upper-bound { [ > < = ] <my-upper> <enemy-upper> })
+-->
+(<s> ^operator <o> = 0.0)}
 
 sp {ants*elaborate*move-destination*up
 (state <s> ^name ants ^operator <o> +)

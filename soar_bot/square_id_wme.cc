@@ -1,3 +1,5 @@
+#include <sstream>
+
 #include "square_id_wme.h"
 
 #include "sml_Client.h"
@@ -37,6 +39,7 @@ using namespace sml;
     }
 
 SquareIdWME::SquareIdWME(
+            Agent *soar_agent,
             Identifier *root,
             StringElement *is_visible,
             StringElement *is_water,
@@ -55,10 +58,19 @@ SquareIdWME::SquareIdWME(
             ant_player_id(ant_player_id),
             hill_player_id(hill_player_id),
 
+            player_roots(vector<Identifier *>(4)),
+
             was_visible(false),
             was_water(false),
             was_hill(false),
             was_food(false),
             was_ant(-1),
             was_hill_player(-1)
-    { }
+    {
+        Identifier *player_ids = soar_agent->CreateIdWME(root, "player");
+        for (int i = 0; i < player_roots.size(); ++i) {
+            stringstream wmeName;
+            wmeName << i;
+            player_roots[i] = soar_agent->CreateIdWME(player_ids, wmeName.str().c_str());
+        }
+    }

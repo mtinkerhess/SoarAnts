@@ -166,6 +166,7 @@ void Bot::playGame()
     // Call end on all ants that are still alive
     for (map<Location, AntAgent*>::iterator ant_agent = ant_agents->begin();
             ant_agent != ant_agents->end(); ++ant_agent) {
+        soar_log << "Done with game, calling end on all agents" << endl;
         ant_agent->second->end();
     }
 }

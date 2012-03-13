@@ -8,4 +8,5 @@ sp {ants*apply-init
 (state <s> ^operator <o>)
 (<o> ^name init)
 -->
-(<s> ^name ants)}
+(<s> ^name ants ^my-id <my-id>)
+(<my-id> ^string (concat 0) ^int (int 0))}

@@ -9,6 +9,9 @@
 struct Square
 {
     bool isVisible, isWater, isHill, isFood, isDestination;
+
+    // ant is the player-id of an ant that occupies this square.
+    // this ant may or may not have moved this turn.
     int ant, hillPlayer;
     std::vector<int> deadAnts;
 

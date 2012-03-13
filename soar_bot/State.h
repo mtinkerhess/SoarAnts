@@ -61,6 +61,14 @@ struct State
     Location getLocation(const Location &startLoc, int direction);
 
     void updateVisionInformation();
+
+    // Gets the number of opponents of the given player within the attack radius of the given location.
+    // Returns a lower bound unless upperBound is true, in which case returns an upper bound.
+    int getAttackOpponents(int row, int col, int playerId, bool upperBound = false) const;
+
+    // Gets a list of the locations that an enemy of this player might be at next turn that are
+    // within the attack radius.
+    vector<pair<int, int> > getPossibleOpponentLocations(int loc_row, int loc_col, int playerId) const;
 };
 
 std::ostream& operator<<(std::ostream &os, const State &state);

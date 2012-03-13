@@ -1,4 +1,4 @@
-watch 0
+watch 5
 watch --rl
 rl --set learning on
 rl --set learning-rate 0.05
